@@ -60,6 +60,7 @@
       docker_container:
         name: rabbitmq
         image: rabbitmq:3.6-alpine
+        state: started
         restart_policy: always
 
     - name: Run app container on remote
