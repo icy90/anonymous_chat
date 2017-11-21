@@ -13,7 +13,7 @@ var rabbitmqHost = (process.env.RABBITMQ_HOST) ? process.env.RABBITMQ_HOST : "lo
 var connectStranger = 0;
 var clients = {};
 
-var colors = ["White","Yellow","Fuchsia","Red","Silver","Gray","Olive","Purple","Maroon","Aqua","Lime","Teal","Green","Blue","Navy","Black"];
+var colors = ["Yellow","Fuchsia","Red","Silver","Gray","Olive","Purple","Maroon","Aqua","Lime","Teal","Green","Blue","Navy","Black"];
 
 function jsUcfirst(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);

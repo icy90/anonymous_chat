@@ -1,0 +1,104 @@
+---
+- hosts: all
+  gather_facts: no
+  vars:
+    GIT_URL: https://github.com/icy90/anonymous_chat.git
+    CONTAINER_NAME: anonymous_chat
+    DOCKERHUB_EMAIL: cafe6747@gmail.com
+    DOCKERHUB_USER: cafe6747 # this just a clone account i created for this test
+    DOCKERHUB_PASS: cafe6747cafe6747cafe6747 # on real scenario we have to use other methods to login, not expose password like this
+    VERSION: 1
+
+  tasks:
+    ### Build steps on local
+    - name: Remove src folder on local
+      delegate_to: localhost
+      file:
+        state: absent
+        path: "{{playbook_dir}}/src"
+
+    - name: Fetch code to local
+      delegate_to: localhost
+      git:
+        repo: "{{GIT_URL}}"
+        dest: "{{playbook_dir}}/src"
+
+    - name: Login docker hub on local
+      delegate_to: localhost
+      docker_login:
+        username: "{{DOCKERHUB_USER}}"
+        password: "{{DOCKERHUB_PASS}}"
+        email: "{{DOCKERHUB_EMAIL}}"
+
+    - name: Build docker image on local and push to repository
+      delegate_to: localhost
+      docker_image:
+        path: "{{playbook_dir}}/src"
+        name: "{{DOCKERHUB_USER}}/{{CONTAINER_NAME}}:{{VERSION}}"
+        push: yes
+
+    ### Deploy steps on remote servers (still localhost in this case)
+    - name: Login docker hub on remote
+      delegate_to: localhost # why still use this? to prevent fail job because cannot ssh to localhost when run on other environment
+      docker_login:
+        username: "{{DOCKERHUB_USER}}"
+        password: "{{DOCKERHUB_PASS}}"
+        email: "{{DOCKERHUB_EMAIL}}"
+
+    - name: Pull rabbitmq images on remote
+      delegate_to: localhost # why still use this? to prevent fail job because cannot ssh to localhost when run on other environment
+      docker_image:
+        name: rabbitmq:3.6-alpine
+
+    - name: Pull app images on remote
+      delegate_to: localhost # why still use this? to prevent fail job because cannot ssh to localhost when run on other environment
+      docker_image:
+        name: "{{DOCKERHUB_USER}}/{{CONTAINER_NAME}}:{{VERSION}}"
+
+    - name: Run rabbitmq container on remote
+      delegate_to: localhost # why still use this? to prevent fail job because cannot ssh to localhost when run on other environment
+      docker_container:
+        name: rabbitmq
+        image: rabbitmq:3.6-alpine
+        restart_policy: always
+
+    - name: Run app container on remote
+      delegate_to: localhost # why still use this? to prevent fail job because cannot ssh to localhost when run on other environment
+      docker_container:
+        name: "{{CONTAINER_NAME}}"
+        image: "{{DOCKERHUB_USER}}/{{CONTAINER_NAME}}:{{VERSION}}"
+        state: started
+        recreate: yes
+        restart: yes
+        links:
+          - "rabbitmq:rabbitmq"
+        ports:
+          - "80:3000"
+        env:
+          RABBITMQ_HOST: rabbitmq
+        restart_policy: always
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
